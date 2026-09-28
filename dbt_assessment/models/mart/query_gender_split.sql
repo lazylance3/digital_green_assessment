@@ -1,3 +1,4 @@
+{{config(schema="mart")}}
 with data as (
     select
         a.query_date,
