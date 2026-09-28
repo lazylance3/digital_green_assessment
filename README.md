@@ -31,7 +31,10 @@ Detailed instructions are present [here](/Replicate_dbt_project.md)
 We use the 2 seed files to ingest them into `dbt_assessment.raw.<table_name>`, i.e., our files are ingested as `dbt_assessment.raw.firebase_events` and `dbt_assessment.raw.user_queries`
 
 #### staging
-These raw tables are then used to create a staging layer where we perform cleaning and data manupilation like standardizing timestamps, casting to date, etc. In the staging layer, we also summarize our data from the raw layer, into something more meaningful. Note that, in our case, we have summarized both raw data sources to `date x user_id` level. That means, our staging tables should be unique at `date x user_id` level. 
+With the 2 raw tables that we have ingested, we build 3 staging tables. 
+1. `stg_user_queries`: An **incremental** staging model that aggregates user chat queries on a daily basis. It collapses individual query events into a daily summary per user, capturing the array of distinct query types, languages detected, and countries. It also nests detailed query metadata (such as timestamps and chat IDs) into a structured payload for deeper analysis.
+2. `stg_firebase_events`: An **incremental** staging model that aggregates daily raw Firebase events at the user level. It calculates daily session boundaries and utilizes conditional aggregates to pivot event names into boolean flags (1/0), tracking key user milestones like onboarding, permissions, content viewership, and chat interactions.
+3. `stg_firebase_events_n_queries`: An enriched staging model that joins daily Firebase user sessions with their corresponding chat queries. It filters specifically for users who had chat interactions and aligns the query timestamps strictly within the boundaries of the user's daily app session, providing a unified view of demographic data, app milestones, and query metadata.  
 
 #### mart
 Here we store business metrics and KPIs like weekly_active_users, conversion_rate, retention, etc.

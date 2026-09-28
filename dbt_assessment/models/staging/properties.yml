@@ -10,7 +10,8 @@ models:
           description: The date the events occurred, cast to a standard date format from 'yyyyMMdd'. Acts as part of the composite primary key.
           data_tests:
             - unique_two_cols:
-                column_name2: user_id
+                arguments:
+                  column_name2: user_id
             - variance
             - not_null
         - name: user_id
@@ -133,13 +134,18 @@ models:
             The date the queries were executed, extracted from the query timestamp. Acts as part of the composite primary key.
           data_tests:
             - unique_two_cols:
-                column_name2: user_id
+                arguments:
+                  column_name2: user_id
             - not_null
             - variance
         - name: user_id
           description: The unique identifier for the user submitting the queries. Acts as part of the composite primary key.
           data_tests:
             - not_null
+            - relationships:
+                arguments:
+                  to: ref('firebase_events')
+                  field: user_id
         - name: gender
           description: An array of distinct gender values associated with the user for that day, with the 'gender_all_' prefix removed.
         - name: country
