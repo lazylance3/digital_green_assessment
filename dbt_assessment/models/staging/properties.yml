@@ -180,7 +180,8 @@ models:
             - not_null
             - variance
             - unique_two_cols:
-                column_name2: user_id
+                arguments:
+                  column_name2: user_id
         - name: user_id
           description: The unique identifier for the user.
           data_tests:
