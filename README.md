@@ -49,22 +49,12 @@ Here is a list of all the tests performed:
 - `unique_two_cols`: tests to see if the table is unique at two columns (composite key). E.g. in our project, we test to see if stg_user_queries model is unique at query_date and user_id level
 - `variance`: tests to see if no. of records for latest date vs last 7 days from latest date is within absolute 1.96 z-score. If variation is >1.96 then the test will fail.
 
+## Interactive dashboard
+I have used powerbi to create an interactive dashboard showcasing the following metrics:
+ - weekly firebase users
+ - weekly conversion rate
+ - country ratio of users who queried on FarmerChat
+ - gender split of users who queried on FarmerChat
+ - 3day, 7day and 14day retention
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+![dashboard](/artifacts/dashboard.png)
