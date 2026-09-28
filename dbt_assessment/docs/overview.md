@@ -1,3 +1,4 @@
+{% docs __overview__%}
 # Digital Green Assessment
 
 #### Objective: 
@@ -37,12 +38,12 @@ These raw tables are then used to create a staging layer where we perform cleani
 Here we store business metrics and KPIs like weekly_active_users, conversion_rate, retention, etc.
 
 Below is the lineage of our pipeline:
-    ![user_queries_lineage](/artifacts/user_queries_lineage.png)
-    ![firebase_events_lineage](/artifacts/firebase_events_lineage.png)
+    ![user_queries_lineage](user_queries_lineage.png)
+    ![firebase_events_lineage](firebase_events_lineage.png)
 
 
 ## Data Validation
-I have used `dbt test` feature to perform data validation tests. I have also created custom tests like `unique_two_cols` and `variance`. You can find these at [/tests/generic/test_unique_two_cols.sql](/dbt_assessment/tests/generic/test_unique_two_cols.sql) and [/tests/generic/test_variance.sql](/dbt_assessment/tests/generic/test_variance.sql). 
+I have used `dbt test` feature to perform data validation tests. I have also created custom tests like `unique_two_cols` and `variance`. You can find these at [/tests/generic/test_unique_two_cols.sql](../tests/generic/test_unique_two_cols.sql) and [/tests/generic/test_variance.sql](../tests/generic/test_variance.sql). 
 
 DBT is running **22** data validation tests in the backend everytime you run `dbt test`. 
 
@@ -60,4 +61,5 @@ I have used powerbi to create an interactive dashboard showcasing the following 
  - gender split of users who queried on FarmerChat
  - 3day, 7day and 14day retention
 
-![dashboard](/artifacts/dashboard.png)
+![dashboard](dashboard.png)
+{% enddocs %}
