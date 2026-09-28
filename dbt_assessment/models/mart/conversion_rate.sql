@@ -12,7 +12,7 @@ select
     event_date,
     count(distinct case when firebase_activity = 1 then user_id end) as firebase_active,
     count(distinct case when n_queries > 0 then user_id end) as chat_activity,
-    chat_activity / firebase_active as activation_rate
+    chat_activity / firebase_active as conversion_rate
 from    
     data
 group by 1

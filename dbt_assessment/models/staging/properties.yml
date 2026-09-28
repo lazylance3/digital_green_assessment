@@ -172,7 +172,8 @@ models:
         An enriched staging model that joins daily Firebase user sessions with their corresponding chat queries. 
         It filters specifically for users who had chat interactions and aligns the query timestamps strictly 
         within the boundaries of the user's daily app session, providing a unified view of demographic data, 
-        app milestones, and query metadata.
+        app milestones, and query metadata. Here, it's assumed that specific firebase events like Send_Query must preceed before there is
+        an entry in user_queries table, i.e., Firebase Send_Query event -> entry in user_queries table.
       columns:
         - name: event_date
           description: The date the Firebase events occurred.

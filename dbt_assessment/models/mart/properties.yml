@@ -28,9 +28,11 @@ models:
         description: The ratio of 14-day retained users to the total distinct users for that day, expressed as a decimal.
   - name: conversion_rate
     description: >
-      A mart-level model calculating the daily user activation rate. It aggregates 
+      A mart-level model calculating the daily user conversion rate. It aggregates 
       enriched session data to compare the total number of users active on Firebase 
-      against those who actively engaged with the chat interface, yielding a daily activation ratio.
+      against those who actively engaged with the chat interface, yielding a daily conversion ratio.
+
+      Conversion rate is calculated as firebase users who have initiated query on the same day as firebase event. 
     columns:
       - name: event_date
         description: The date of the tracked user activity. Acts as the primary key.
@@ -41,7 +43,7 @@ models:
         description: The count of distinct users who logged at least one Firebase event on this date.
       - name: chat_activity
         description: The count of distinct users who submitted at least one chat query on this date.
-      - name: activation_rate
+      - name: conversion_rate
         description: The ratio of users who engaged with the chat interface compared to the total active Firebase users for the day (calculated as chat_activity / firebase_active).
   - name: firebase_retention
     description: >
