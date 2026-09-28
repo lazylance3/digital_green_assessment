@@ -1,4 +1,3 @@
-{% docs __overview__ %}
 # Digital Green Assessment
 
 #### Objective: 
@@ -14,33 +13,51 @@ I have used **dbt** as the framework of choice for the transformation layer.
 
 ### Instructions to replicate the transformation layer
 
-1. Clone this github repository: [digital green assessment](https://github.com/lazylance3/digital_green_assessment.git)
-2. Open cmd from the repository directory and `run pip install -r requirements.txt`
-3. This will install `dbt-core` and `dbt-databricks` adapter into your system
-4. Next, change directory to `dbt_assessment` folder within the repository.
-5. Now, rename `profilesPS.yml` file to `profiles.yml` and add your databricks configuration, i.e., 
-    1. databricks host
-    2. http_path and 
-    3. token (`databricks settings -> developer -> manage access tokens`)
-6. You can fetch the 1st two of these details from `databricks -> compute -> sql warehouses -> serverless warehouse -> connection details`
+In essense, you need to clone this git repository and run the following commands:
+```
+dbt seed
+dbt run
+dbt test
+dbt docs generate --target-path site
+dbt docs serve
+```
 
-    ![connection details](../docs/connection_details.png)
+The last two commands `dbt docs generate --target-path site` generates the documentation using the yml files in the project while `dbt docs serve` hosts it on localhost for consumption
 
-7. Also, go to catalog from the menu page and create a new catalog named `dbt_assessment`
+Detailed instructions are present [here](/Replicate_dbt_project.md)
 
-    ![create catalog](../docs/databricks_create_catalog.png)    
-6. Once the setup is complete, execute `dbt seed` in the command line. 
-    > Note that you should be inside the `dbt_assessment` directory where `models` and `dbt_project.yml` files are present.
-7. `dbt seed` will use the csv files inside the seeds directory to create tables in databricks. This should be within `dbt_assessment` catalog and `raw` schema (you can cross check in `profiles.yml` file). The csv files provided for the assessment are `firebase_events.csv` and `user_queries.csv`. 
-8. You should see `Finished running 2 seeds in x hours x minutes`
+### The transformation
+#### raw
+We use the 2 seed files to ingest them into `dbt_assessment.raw.<table_name>`, i.e., our files are ingested as `dbt_assessment.raw.firebase_events` and `dbt_assessment.raw.user_queries`
 
-    ![atl text](../docs/seed.png)
-9. Now execute `dbt run` and wait. You should now see a "Completed Successfully" message. Dbt should now have created `8 tables and 1 view` within `dbt_assessment` catalog in databricks
+#### staging
+These raw tables are then used to create a staging layer where we perform cleaning and data manupilation like standardizing timestamps, casting to date, etc. In the staging layer, we also summarize our data from the raw layer, into something more meaningful. Note that, in our case, we have summarized both raw data sources to `date x user_id` level. That means, our staging tables should be unique at `date x user_id` level. 
 
-    ![alt text](../docs/run.png)
-10. Finally, execute `dbt test` to run the data validation tests defined within `dbt_assessment` project. 
+#### mart
+Here we store business metrics and KPIs like weekly_active_users, conversion_rate, retention, etc.
 
-    ![test](../docs/test.png)
+Below is the lineage of our pipeline:
+    ![user_queries_lineage](/artifacts/user_queries_lineage.png)
+    ![firebase_events_lineage](/artifacts/firebase_events_lineage.png)
 
-11. Note that documentation for this project has been generated through `dbt docs generate --target-path site`. You can view the documentation within VSCode under `site/index.html`
-{% enddocs %}
+
+## Data Validation
+I have used `dbt test` feature to perform data validation tests. I have also created custom tests like `unique_two_cols` and `variance`. You can find these at [/tests/generic/test_unique_two_cols.sql](/dbt_assessment/tests/generic/test_unique_two_cols.sql) and [/tests/generic/test_variance.sql](/dbt_assessment/tests/generic/test_variance.sql). 
+
+DBT is running **22** data validation tests in the backend everytime you run `dbt test`. 
+
+Here is a list of all the tests performed:
+- `not_null`: tests to see if column has any nulls. If nulls are present, the test will fail
+- `unique`: tests to see if column has unique records. If more than one record for column is found, the test will fail
+- `unique_two_cols`: tests to see if the table is unique at two columns (composite key). E.g. in our project, we test to see if stg_user_queries model is unique at query_date and user_id level
+- `variance`: tests to see if no. of records for latest date vs last 7 days from latest date is within absolute 1.96 z-score. If variation is >1.96 then the test will fail.
+
+## Interactive dashboard
+I have used powerbi to create an interactive dashboard showcasing the following metrics:
+ - weekly firebase users
+ - weekly conversion rate
+ - country ratio of users who queried on FarmerChat
+ - gender split of users who queried on FarmerChat
+ - 3day, 7day and 14day retention
+
+![dashboard](/artifacts/dashboard.png)

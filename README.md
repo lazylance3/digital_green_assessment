@@ -19,7 +19,10 @@ dbt seed
 dbt run
 dbt test
 dbt docs generate --target-path site
+dbt docs serve
 ```
+
+The last two commands `dbt docs generate --target-path site` generates the documentation using the yml files in the project while `dbt docs serve` hosts it on localhost for consumption
 
 Detailed instructions are present [here](/Replicate_dbt_project.md)
 
@@ -39,7 +42,7 @@ Below is the lineage of our pipeline:
 
 
 ## Data Validation
-I have used `dbt test` feature to perform data validation tests. I have also created custom tests like `unique_two_cols` and `variance`. You can find these at [/tests/generic/test_unique_two_cols.sql](/tests/generic/test_unique_two_cols.sql) and [/tests/generic/test_variance.sql](/tests/generic/test_variance.sql). 
+I have used `dbt test` feature to perform data validation tests. I have also created custom tests like `unique_two_cols` and `variance`. You can find these at [/tests/generic/test_unique_two_cols.sql](/dbt_assessment/tests/generic/test_unique_two_cols.sql) and [/tests/generic/test_variance.sql](/dbt_assessment/tests/generic/test_variance.sql). 
 
 DBT is running **22** data validation tests in the backend everytime you run `dbt test`. 
 
