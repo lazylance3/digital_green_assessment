@@ -1,0 +1,11 @@
+dbt_assessment:
+  outputs:
+    dev:
+      catalog: dbt_assessment
+      host:<your id>.cloud.databricks.com
+      http_path: <your http path>
+      schema: raw
+      threads: 1
+      token: <your token>
+      type: databricks
+  target: dev
