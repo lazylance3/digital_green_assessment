@@ -1,0 +1,111 @@
+version: 2
+
+models:
+  - name: chat_retention
+    description: >
+      A mart-level model that calculates daily user retention metrics. It leverages window functions 
+      to determine the next active date for each user and uses conditional aggregates to group these 
+      users into 3-day, 7-day, and 14-day retention cohorts, calculating both absolute counts and percentages.
+    columns:
+      - name: query_date
+        description: The reference date of the initial user query activity. Acts as the primary key for this aggregated table.
+        data_tests:
+          - unique
+          - not_null
+      - name: users
+        description: The total count of distinct users who executed at least one query on the given `query_date`.
+      - name: 3d_retained_users
+        description: The count of distinct users who returned to execute another query between 4 and 6 days after their initial `query_date`.
+      - name: 7d_retained_users
+        description: The count of distinct users who returned to execute another query between 7 and 13 days after their initial `query_date`.
+      - name: 14d_retained_users
+        description: The count of distinct users who returned to execute another query between 14 and 21 days after their initial `query_date`.
+      - name: per_3d_retained_users
+        description: The ratio of 3-day retained users to the total distinct users for that day, expressed as a decimal.
+      - name: per_7d_retained_users
+        description: The ratio of 7-day retained users to the total distinct users for that day, expressed as a decimal.
+      - name: per_14d_retained_users
+        description: The ratio of 14-day retained users to the total distinct users for that day, expressed as a decimal.
+  - name: conversion_rate
+    description: >
+      A mart-level model calculating the daily user activation rate. It aggregates 
+      enriched session data to compare the total number of users active on Firebase 
+      against those who actively engaged with the chat interface, yielding a daily activation ratio.
+    columns:
+      - name: event_date
+        description: The date of the tracked user activity. Acts as the primary key.
+        data_tests:
+          - unique
+          - not_null
+      - name: firebase_active
+        description: The count of distinct users who logged at least one Firebase event on this date.
+      - name: chat_activity
+        description: The count of distinct users who submitted at least one chat query on this date.
+      - name: activation_rate
+        description: The ratio of users who engaged with the chat interface compared to the total active Firebase users for the day (calculated as chat_activity / firebase_active).
+  - name: firebase_retention
+    description: >
+      A mart-level model designed to track and calculate daily user retention 
+      metrics based on Firebase event activity. It leverages window functions 
+      to determine the next active event date for each user and utilizes conditional 
+      aggregates to group users into 3-day, 7-day, and 14-day retention cohorts, 
+      calculating both absolute counts and proportional percentages.
+    columns:
+      - name: event_date
+        description: The reference date of the initial user event activity. Acts as the primary key for this aggregated table.
+        data_tests:
+          - unique
+          - not_null
+      - name: users
+        description: The total count of distinct users who logged at least one event on the given `event_date`.
+      - name: 3d_retained_users
+        description: The count of distinct users who returned to log another event between 4 and 6 days after their initial `event_date`.
+      - name: per_3d_retained_users
+        description: The ratio of 3-day retained users to the total distinct users for that day, expressed as a decimal.
+      - name: 7d_retained_users
+        description: The count of distinct users who returned to log another event between 7 and 13 days after their initial `event_date`.
+      - name: per_7d_retained_users
+        description: The ratio of 7-day retained users to the total distinct users for that day, expressed as a decimal.
+      - name: 14d_retained_users
+        description: The count of distinct users who returned to log another event between 14 and 20 days after their initial `event_date`.
+      - name: per_14d_retained_users
+        description: The ratio of 14-day retained users to the total distinct users for that day, expressed as a decimal.
+  - name: query_country_split
+    description: >
+      A mart-level model that calculates the daily distinct count of users grouped by their 
+      associated country. It handles array data by exploding the nested country arrays 
+      from the user queries staging model into a tabular format, and applies a coalesce 
+      function to ensure any null country values are labeled as 'Unavailable'.
+    columns:
+      - name: country
+        description: The country associated with the user query, derived by exploding the nested country array. Null values are explicitly mapped to 'Unavailable'.
+        data_tests:
+          - not_null
+      - name: vus
+        description: The count of distinct user IDs associated with that specific country on the given day.
+  - name: query_gender_split
+    description: >
+      A mart-level model that calculates the overall distinct count of users grouped by their 
+      associated gender. It handles nested array data by exploding the gender array 
+      from the user queries staging model into a tabular format, and uses a coalesce 
+      function to ensure any null gender values are explicitly labeled as 'Unavailable'.
+    columns:
+      - name: gender
+        description: The gender associated with the user, derived by exploding the nested gender array. Null values are mapped to 'Unavailable'.
+        data_tests:
+          - not_null
+      - name: vus
+        description: The total count of distinct user IDs associated with that specific gender.
+  - name: weekly_active_users
+    description: >
+      A mart-level model that calculates the total number of distinct active users 
+      on a weekly basis. It truncates the daily Firebase event dates to the start of 
+      the week and aggregates the unique users within those weekly periods.
+    columns:
+      - name: week_
+        description: The starting date of the week (truncated from the event date). Acts as the primary key.
+        data_tests:
+          - unique
+          - not_null
+      - name: active_users
+        description: The total count of distinct user IDs that logged at least one Firebase event during that specific week.
