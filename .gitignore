@@ -8,3 +8,4 @@ dbt_assessment/dbt_packages/
 dbt_assessment/logs/
 dbt_assessment/.env
 dbt_assessment/.user.yml
+dbt_assessment/site/
