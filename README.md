@@ -23,6 +23,21 @@ dbt docs generate --target-path site
 
 Detailed instructions are present [here](/Replicate_dbt_project.md)
 
+### The transformation
+#### raw
+We use the 2 seed files to ingest them into `dbt_assessment.raw.<table_name>`, i.e., our files are ingested as `dbt_assessment.raw.firebase_events` and `dbt_assessment.raw.user_queries`
+
+#### staging
+These raw tables are then used to create a staging layer where we perform cleaning and data manupilation like standardizing timestamps, casting to date, etc. In the staging layer, we also summarize our data from the raw layer, into something more meaningful. Note that, in our case, we have summarized both raw data sources to `date x user_id` level. That means, our staging tables should be unique at `date x user_id` level. 
+
+#### mart
+Here we store business metrics and KPIs like weekly_active_users, conversion_rate, retention, etc.
+
+Below is the lineage of our pipeline:
+    ![user_queries_lineage](/artifacts/user_queries_lineage.png)
+    ![firebase_events_lineage](/artifacts/firebase_events_lineage.png)
+
+
 ## Data Validation
 I have used `dbt test` feature to perform data validation tests. I have also created custom tests like `unique_two_cols` and `variance`. You can find these at [/tests/generic/test_unique_two_cols.sql](/tests/generic/test_unique_two_cols.sql) and [/tests/generic/test_variance.sql](/tests/generic/test_variance.sql). 
 
