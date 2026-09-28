@@ -1,25 +1,29 @@
 models:
     - name: stg_firebase_events
-      description: "This model summarizes all events of firebase_events at an event_date and user_id level. The model captures the users journey through FarmerChat. The journey is captured in a binary format, i.e., columns hold 1/0 based on if they did a certain interaction/activity or not. See column descriptions for more info. This model is refreshed incrementally to reduce data scan and compute cost."
+      description: >
+        An incremental staging model that aggregates daily raw Firebase events at the user level. 
+        It calculates daily session boundaries and utilizes conditional aggregates to pivot 
+        event names into boolean flags (1/0), tracking key user milestones like onboarding, 
+        permissions, content viewership, and chat interactions.
       columns:
         - name: event_date
-          description: "Date on which event occured. This column has been converted to date type from it's origianl yyyyMMdd string format"
+          description: The date the events occurred, cast to a standard date format from 'yyyyMMdd'. Acts as part of the composite primary key.
           data_tests:
             - unique_two_cols:
                 column_name2: user_id
         - name: user_id
-          description: "Unique identifier for each user/customer"
+          description: The unique identifier for the user interacting with the app. Acts as part of the composite primary key.
           data_tests:
             - not_null
         - name: session_start_time
-          description: "Timestamp on which the first event for the user was recorded for the given date."
+          description: The earliest event timestamp (converted from microsecond unix time) for the user on the given date.
         - name: session_end_time
-          description: "Timestamp on which the last event for the user was recorded for the given date."
+          description: The latest event timestamp (converted from microsecond unix time) for the user on the given date.
         - name: firebase_activity
-          description: "Default: 1 for every entry in this model. The intention is to use this column for easier aggregation in downstream models."
+          description: A boolean flag (1/0) indicating that the user had at least one logged Firebase event on this date.
         - name: user_engagement
           description: >
-            true or 1 if user performs any of the following events: 
+            A boolean flag (1/0) indicating core app engagement, triggered by events like app installation, launch, or session start. Events used:
             - App_Installed 
             - firebase_campaign
             - App_Launched
@@ -28,7 +32,7 @@ models:
             - user_engagement
         - name: onboarding_initiated
           description: >
-            true or 1 if user performs any of the following events:
+            A boolean flag (1/0) indicating the user began the onboarding flow, interacting with welcome screens, OTP verification, or profile setup. Events used to generate flag:
             - Welcome_Screen_Get_Started_Button_Click
             - Save_Language_Click_Event
             - Mobile_verification_Started
@@ -43,13 +47,13 @@ models:
             - Onboarding_completed_Step2
         - name: onboarding_completed
           description: >
-            true or 1 if user performs any of the following events: 
+            A boolean flag (1/0) indicating the user successfully finished the first-time onboarding process. Events include:
             - Onboarding_completed
             - Onboarding_Completed
             - FirstTimeOnboardingCompleted
         - name: permissions_flow
           description: >
-            true or 1 if user performs any of the following events: 
+            A boolean flag (1/0) indicating the user interacted with device permission prompts, specifically regarding location fetching and GPS settings. Events include:
             - Permission_popup_shown
             - Permission_granted
             - Permission_denied
@@ -71,7 +75,7 @@ models:
             - Location_Update_Triggered
         - name: content_viewership
           description: >
-            1 if events indicate user engaged with content. Events include 
+            A boolean flag (1/0) indicating the user viewed in-app content such as the dashboard, weather forecasts, market prices, or leaderboards. Events included:
             - FirstTimeDashboardViewed
             - Dashboard_Viewed
             - Card_Shown
@@ -85,7 +89,8 @@ models:
             - ad_failed
         - name: chat_interaction
           description: >
-            1 if events indicate that user has intiated a chat. Events include 'Chat_Icon_Clicked
+            A boolean flag (1/0) indicating the user engaged with the chat interface, including microphone usage, audio recording, and API queries. Events include 
+            - Chat_Icon_Clicked
             - FirstQueryAsked
             - Microphone_Click_Event
             - Image_Option_Dialog_Click_Event
@@ -104,7 +109,8 @@ models:
             - Stopped_Playing_Response_Audio
         - name: response_interaction
           description: >
-            1 if events indicate user had taken action on a response. Events include 'Answer_Save_Button_Clicked
+            A boolean flag (1/0) indicating the user took follow-up actions on a received response, such as saving, sharing, or starting over. Events include 
+            - Answer_Save_Button_Clicked
             - Answer_Share_Button_Clicked
             - Content_Try_Again_Clicked
             - Start_Over_Clicked
