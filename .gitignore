@@ -1,0 +1,10 @@
+.venv
+.vscode
+logs/
+csvs/
+dbt_assessment/profiles.yml
+dbt_assessment/target/
+dbt_assessment/dbt_packages/
+dbt_assessment/logs/
+dbt_assessment/.env
+dbt_assessment/.user.yml

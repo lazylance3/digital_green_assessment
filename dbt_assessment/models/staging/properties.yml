@@ -1,0 +1,160 @@
+models:
+    - name: stg_firebase_events
+      description: "This model summarizes all events of firebase_events at an event_date and user_id level. The model captures the users journey through FarmerChat. The journey is captured in a binary format, i.e., columns hold 1/0 based on if they did a certain interaction/activity or not. See column descriptions for more info. This model is refreshed incrementally to reduce data scan and compute cost."
+      columns:
+        - name: event_date
+          description: "Date on which event occured. This column has been converted to date type from it's origianl yyyyMMdd string format"
+          data_tests:
+            - unique_two_cols:
+                column_name2: user_id
+        - name: user_id
+          description: "Unique identifier for each user/customer"
+          data_tests:
+            - not_null
+        - name: session_start_time
+          description: "Timestamp on which the first event for the user was recorded for the given date."
+        - name: session_end_time
+          description: "Timestamp on which the last event for the user was recorded for the given date."
+        - name: firebase_activity
+          description: "Default: 1 for every entry in this model. The intention is to use this column for easier aggregation in downstream models."
+        - name: user_engagement
+          description: >
+            true or 1 if user performs any of the following events: 
+            - App_Installed 
+            - firebase_campaign
+            - App_Launched
+            - App_Opened
+            - session_start
+            - user_engagement
+        - name: onboarding_initiated
+          description: >
+            true or 1 if user performs any of the following events:
+            - Welcome_Screen_Get_Started_Button_Click
+            - Save_Language_Click_Event
+            - Mobile_verification_Started
+            - Send_OTP_Click_Event
+            - Submit_OTP
+            - Name_Save_Click_Event
+            - Country_Selected
+            - Country_selected
+            - Signup_Continue_Clicked
+            - Login_Completed
+            - Onboarding_completed_Step1
+            - Onboarding_completed_Step2
+        - name: onboarding_completed
+          description: >
+            true or 1 if user performs any of the following events: 
+            - Onboarding_completed
+            - Onboarding_Completed
+            - FirstTimeOnboardingCompleted
+        - name: permissions_flow
+          description: >
+            true or 1 if user performs any of the following events: 
+            - Permission_popup_shown
+            - Permission_granted
+            - Permission_denied
+            - location_permission_prompt_triggered
+            - location_permission_allow
+            - location_permission_deny
+            - gps_flow_step
+            - Device_Location_Fetch_Initiated
+            - share_location_clicked
+            - Device_Location_Fetch_Succeded
+            - location_fetch_success
+            - location_update_success
+            - location_fetch_failed
+            - location_fetch_failed_timeout
+            - location_update_failure
+            - location_fallback_used_ip_based_location
+            - location_settings_opened
+            - Save_Location_Event
+            - Location_Update_Triggered
+        - name: content_viewership
+          description: >
+            1 if events indicate user engaged with content. Events include 
+            - FirstTimeDashboardViewed
+            - Dashboard_Viewed
+            - Card_Shown
+            - Card_Viewed
+            - Card_Clicked
+            - Weather_Forecast_Viewed
+            - Weather_Forecast_Expanded
+            - Market_Price_View_All_Click_Event
+            - Leaderboard_Activity_Click
+            - ad_viewed
+            - ad_failed
+        - name: chat_interaction
+          description: >
+            1 if events indicate that user has intiated a chat. Events include 'Chat_Icon_Clicked
+            - FirstQueryAsked
+            - Microphone_Click_Event
+            - Image_Option_Dialog_Click_Event
+            - Send_Record_Audio_Click_Event
+            - Input_Capture_Failed
+            - Transcription_Success
+            - Transcription_Failed
+            - Send_Query_Initiated
+            - Send_Query
+            - question_card_data_Submitted
+            - API_Call_Initiated
+            - API_Call_Success
+            - API_Call_Failed
+            - API_Call_Timeout
+            - Started_Playing_Response_Audio
+            - Stopped_Playing_Response_Audio
+        - name: response_interaction
+          description: >
+            1 if events indicate user had taken action on a response. Events include 'Answer_Save_Button_Clicked
+            - Answer_Share_Button_Clicked
+            - Content_Try_Again_Clicked
+            - Start_Over_Clicked
+      config: 
+        materialized: incremental
+        unique_key: event_date
+        incremental_strategy: merge
+        incremental_predicates: ["DBT_INTERNAL_DEST.user_id = DBT_INTERNAL_SOURCE.user_id"]
+    - name: stg_user_queries
+      description: >
+        This model is a cleaned version of the seed: user_queries. 
+        The data is summarized at a query_date and user_id level. Detailed information about the chat_id, query_id 
+        and it's properties is saved at a struct in column named 'payload'.
+      columns:
+        - name: query_date
+          description: >
+            Date on which query was created. 
+          data_tests:
+            - unique_two_cols:
+                column_name2: user_id
+        - name: gender
+          description: >
+            Array of gender of user who intiated query
+        - name: country
+          description: >
+            Array of country of user who initiated query
+        - name:   query_type
+          description: >
+            Array of different query types used by user during chat. Values include: 
+              - text
+              - voice
+              - image
+        - name: language_detected
+          description: >
+            Array of languages detected by recognizer. 
+        - name: n_queries
+          description: >
+            No. of queries created by user
+        - name: query_start_time
+          description: >
+            Time of first query created by user on given date
+        - name: query_end_time
+          description: >
+            Time of last query created by user on given date
+        - name: payload
+          description: >
+            Struct of information related to chat and queries. This is an array of structs with struct definition given below:
+            [{chat_id: 23j4k2l34j-k3jkl32j40-432jl, query_details: {query_id: 93284092343920, query_timestamp: ..,query_type: .., language_detected}}]
+      config:
+        materialized: incremental
+        unique_key: query_date
+        incremental_strategy: merge
+        incremental_predicates: ["DBT_INTERNAL_DEST.user_id = DBT_INTERNAL_SOURCE.user_id"]

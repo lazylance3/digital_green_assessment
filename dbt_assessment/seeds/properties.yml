@@ -1,0 +1,17 @@
+seeds:
+    - name: user_queries
+      description: "Provides data on queries initiated on FarmerChat by user"
+      columns:
+        - name: query_id
+          data tests:
+            - unique
+            - not null
+        - name: query_timestamp
+          description: The timestamp on which the query was generated
+    - name: firebase_events
+      description: "Provides data on firebase activities done by user"
+      columns:
+        - name: event_date
+          description: String valued date in yyyyMMdd format of the date on which event occured.
+        - name: query_timestamp
+          description: The timestamp on which the query was generated
