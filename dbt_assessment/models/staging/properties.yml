@@ -11,6 +11,8 @@ models:
           data_tests:
             - unique_two_cols:
                 column_name2: user_id
+            - variance
+            - not_null
         - name: user_id
           description: The unique identifier for the user interacting with the app. Acts as part of the composite primary key.
           data_tests:
@@ -22,7 +24,7 @@ models:
         - name: firebase_activity
           description: A boolean flag (1/0) indicating that the user had at least one logged Firebase event on this date.
         - name: user_engagement
-          description: >
+          description: |
             A boolean flag (1/0) indicating core app engagement, triggered by events like app installation, launch, or session start. Events used:
             - App_Installed 
             - firebase_campaign
@@ -31,7 +33,7 @@ models:
             - session_start
             - user_engagement
         - name: onboarding_initiated
-          description: >
+          description: |
             A boolean flag (1/0) indicating the user began the onboarding flow, interacting with welcome screens, OTP verification, or profile setup. Events used to generate flag:
             - Welcome_Screen_Get_Started_Button_Click
             - Save_Language_Click_Event
@@ -46,13 +48,13 @@ models:
             - Onboarding_completed_Step1
             - Onboarding_completed_Step2
         - name: onboarding_completed
-          description: >
+          description: |
             A boolean flag (1/0) indicating the user successfully finished the first-time onboarding process. Events include:
             - Onboarding_completed
             - Onboarding_Completed
             - FirstTimeOnboardingCompleted
         - name: permissions_flow
-          description: >
+          description: |
             A boolean flag (1/0) indicating the user interacted with device permission prompts, specifically regarding location fetching and GPS settings. Events include:
             - Permission_popup_shown
             - Permission_granted
@@ -74,7 +76,7 @@ models:
             - Save_Location_Event
             - Location_Update_Triggered
         - name: content_viewership
-          description: >
+          description: |
             A boolean flag (1/0) indicating the user viewed in-app content such as the dashboard, weather forecasts, market prices, or leaderboards. Events included:
             - FirstTimeDashboardViewed
             - Dashboard_Viewed
@@ -88,7 +90,7 @@ models:
             - ad_viewed
             - ad_failed
         - name: chat_interaction
-          description: >
+          description: |
             A boolean flag (1/0) indicating the user engaged with the chat interface, including microphone usage, audio recording, and API queries. Events include 
             - Chat_Icon_Clicked
             - FirstQueryAsked
@@ -108,7 +110,7 @@ models:
             - Started_Playing_Response_Audio
             - Stopped_Playing_Response_Audio
         - name: response_interaction
-          description: >
+          description: |
             A boolean flag (1/0) indicating the user took follow-up actions on a received response, such as saving, sharing, or starting over. Events include 
             - Answer_Save_Button_Clicked
             - Answer_Share_Button_Clicked
@@ -121,46 +123,97 @@ models:
         incremental_predicates: ["DBT_INTERNAL_DEST.user_id = DBT_INTERNAL_SOURCE.user_id"]
     - name: stg_user_queries
       description: >
-        This model is a cleaned version of the seed: user_queries. 
-        The data is summarized at a query_date and user_id level. Detailed information about the chat_id, query_id 
-        and it's properties is saved at a struct in column named 'payload'.
+        An incremental staging model that aggregates user chat queries on a daily basis. 
+        It collapses individual query events into a daily summary per user, capturing the array 
+        of distinct query types, languages detected, and countries. It also nests detailed 
+        query metadata (such as timestamps and chat IDs) into a structured payload for deeper analysis.
       columns:
         - name: query_date
           description: >
-            Date on which query was created. 
+            The date the queries were executed, extracted from the query timestamp. Acts as part of the composite primary key.
           data_tests:
             - unique_two_cols:
                 column_name2: user_id
+            - not_null
+            - variance
+        - name: user_id
+          description: The unique identifier for the user submitting the queries. Acts as part of the composite primary key.
+          data_tests:
+            - not_null
         - name: gender
-          description: >
-            Array of gender of user who intiated query
+          description: An array of distinct gender values associated with the user for that day, with the 'gender_all_' prefix removed.
         - name: country
-          description: >
-            Array of country of user who initiated query
-        - name:   query_type
-          description: >
-            Array of different query types used by user during chat. Values include: 
-              - text
-              - voice
-              - image
+          description: An array of distinct countries from which the user submitted queries on that day.
+        - name: query_type
+          description: An array of distinct query types (e.g., text, voice) submitted by the user on that day.
         - name: language_detected
-          description: >
-            Array of languages detected by recognizer. 
+          description: An array of distinct languages detected from the user's queries on that day.
         - name: n_queries
-          description: >
-            No. of queries created by user
+          description: The total count of distinct query IDs submitted by the user on that day.
         - name: query_start_time
-          description: >
-            Time of first query created by user on given date
+          description: The exact timestamp of the user's first query on that day.
         - name: query_end_time
-          description: >
-            Time of last query created by user on given date
+          description: The exact timestamp of the user's last query on that day.
         - name: payload
-          description: >
-            Struct of information related to chat and queries. This is an array of structs with struct definition given below:
-            [{chat_id: 23j4k2l34j-k3jkl32j40-432jl, query_details: {query_id: 93284092343920, query_timestamp: ..,query_type: .., language_detected}}]
+          description: A nested array of struct objects containing detailed metadata for every query executed by the user on that day. Each struct includes the `chat_id` and nested `query_details` (`query_id`, `query_timestamp`, `query_type`, `language_detected`).
       config:
         materialized: incremental
         unique_key: query_date
         incremental_strategy: merge
         incremental_predicates: ["DBT_INTERNAL_DEST.user_id = DBT_INTERNAL_SOURCE.user_id"]
+    - name: stg_firebase_events_n_queries
+      description: >
+        An enriched staging model that joins daily Firebase user sessions with their corresponding chat queries. 
+        It filters specifically for users who had chat interactions and aligns the query timestamps strictly 
+        within the boundaries of the user's daily app session, providing a unified view of demographic data, 
+        app milestones, and query metadata.
+      columns:
+        - name: event_date
+          description: The date the Firebase events occurred.
+          data_tests:
+            - not_null
+            - variance
+            - unique_two_cols:
+                column_name2: user_id
+        - name: user_id
+          description: The unique identifier for the user.
+          data_tests:
+            - not_null
+        - name: session_start_time
+          description: The earliest Firebase event timestamp for the user on this date.
+        - name: session_end_time
+          description: The latest Firebase event timestamp for the user on this date.
+        - name: firebase_activity
+          description: Boolean flag indicating logged Firebase events on this date.
+        - name: user_engagement
+          description: Boolean flag indicating core app engagement (e.g., launch, session start).
+        - name: onboarding_initiated
+          description: Boolean flag indicating the user began the onboarding flow.
+        - name: onboarding_completed
+          description: Boolean flag indicating the user successfully finished onboarding.
+        - name: permissions_flow
+          description: Boolean flag indicating interaction with device permission prompts.
+        - name: content_viewership
+          description: Boolean flag indicating the user viewed in-app content.
+        - name: chat_interaction
+          description: Boolean flag indicating engagement with the chat interface (always 1 in this model due to the join condition).
+        - name: response_interaction
+          description: Boolean flag indicating follow-up actions on a received response.
+        - name: query_date
+          description: The date the queries were executed, logically matched to the event_date.
+        - name: gender
+          description: An array of distinct gender values associated with the user for that session.
+        - name: country
+          description: An array of distinct countries from which the user submitted queries.
+        - name: query_type
+          description: An array of distinct query types (e.g., text, voice) submitted during the session.
+        - name: language_detected
+          description: An array of distinct languages detected from the user's queries.
+        - name: n_queries
+          description: The total count of distinct query IDs submitted by the user during this session.
+        - name: query_start_time
+          description: The exact timestamp of the user's first query within the session bounds.
+        - name: query_end_time
+          description: The exact timestamp of the user's last query within the session bounds.
+        - name: payload
+          description: A nested array of struct objects containing detailed metadata (chat_id, query_id, timestamps, types, languages) for every query executed in the session window.

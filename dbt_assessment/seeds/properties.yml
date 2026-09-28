@@ -1,3 +1,5 @@
+version: 2
+
 seeds:
     - name: user_queries
       description: "Provides data on queries initiated on FarmerChat by user"
