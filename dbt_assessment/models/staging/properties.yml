@@ -225,3 +225,14 @@ models:
           description: The exact timestamp of the user's last query within the session bounds.
         - name: payload
           description: A nested array of struct objects containing detailed metadata (chat_id, query_id, timestamps, types, languages) for every query executed in the session window.
+    - name: stg_user_fact
+      description: A fact table which holds non-null attributes for each user. The attributes are updated as per the latest record received from user_queries.
+      config:
+        materialized: incremental
+        unique_key: user_id
+        incremental_strategy: merge
+      columns:
+        - name: user_id
+          data_tests:
+            - not_null
+            - unique
