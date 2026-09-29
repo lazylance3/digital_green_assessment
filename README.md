@@ -13,7 +13,9 @@ I have used **dbt** as the framework of choice for the transformation layer.
 
 ### Instructions to replicate the transformation layer
 
-In essense, you need to clone this git repository and run the following commands:
+Detailed instructions are present [here](/replicate_dbt_project.md)
+
+To summarize, you need to clone this git repository and open the `CMD` in the dbt_assessment directory and run the following commands:
 ```
 dbt seed
 dbt run
@@ -24,8 +26,6 @@ dbt docs serve
 
 The last two commands `dbt docs generate --target-path site` generates the documentation using the yml files in the project while `dbt docs serve` hosts it on localhost for consumption
 
-Detailed instructions are present [here](/replicate_dbt_project.md)
-
 ### The transformation
 #### raw
 We use the 2 seed files to ingest them into `dbt_assessment.raw.<table_name>`, i.e., our files are ingested as `dbt_assessment.raw.firebase_events` and `dbt_assessment.raw.user_queries`
@@ -35,9 +35,15 @@ With the 2 raw tables that we have ingested, we build 3 staging tables.
 1. `stg_user_queries`: An **incremental** staging model that aggregates user chat queries on a daily basis. It collapses individual query events into a daily summary per user, capturing the array of distinct query types, languages detected, and countries. It also nests detailed query metadata (such as timestamps and chat IDs) into a structured payload for deeper analysis.
 2. `stg_firebase_events`: An **incremental** staging model that aggregates daily raw Firebase events at the user level. It calculates daily session boundaries and utilizes conditional aggregates to pivot event names into boolean flags (1/0), tracking key user milestones like onboarding, permissions, content viewership, and chat interactions.
 3. `stg_firebase_events_n_queries`: An enriched staging model that joins daily Firebase user sessions with their corresponding chat queries. It filters specifically for users who had chat interactions and aligns the query timestamps strictly within the boundaries of the user's daily app session, providing a unified view of demographic data, app milestones, and query metadata.  
+4. `stg_user_fact`: A fact table which holds non-null attributes for each user. The attributes are updated as per the latest record received from user_queries and is updated using **incremental** merge strategy
 
 #### mart
-Here we store business metrics and KPIs like weekly_active_users, conversion_rate, retention, etc.
+Here we store business metrics and KPIs like 
+- weekly_active_users
+- conversion_rate
+- retention
+- country split of users who queried
+- gender split of users who queried
 
 Below is the lineage of our pipeline:
     ![user_queries_lineage](/artifacts/user_queries_lineage.png)
